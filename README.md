@@ -3,13 +3,13 @@ tinto-api
 
 A client-server mechanism for node and javascript clients - no REST, no HTTP, no boilerplate
 
--What it does:
+#What it does
 
 Define an API on the server. Connect to it using the client library and use the API right away.
 
-- Usage:
+#Usage:
 
--- On the server:
+##On the server:
 
 First define an API, for example:
 ```javascript
@@ -39,7 +39,7 @@ new TintoApi(server, api, options); //server is the http connection
 ```
 
 
--- On the client:
+##On the client:
 ```
 var api = new TintoApi('ws://localhost', options);
 api.ready(function() { //bootstrap your code so the API is ready to take calls
@@ -60,23 +60,23 @@ api.ready(function() { //bootstrap your code so the API is ready to take calls
 
 
 
--Installation
+#Installation
 
 * On the server: npm install tinto-api --save
 
 * On the client: bower install tinto-api --save
 
 
--Documentation
+#Documentation
 
 
--Options
+#Options
 
 * contextResolver - a function which resolves the context further
-* 
+* Other...
 
 
---Context Resolver
+##Context Resolver
 
 All API functions (available to the client) need to conform to the following structure:
 
@@ -92,7 +92,7 @@ This example uses the context resolver to bind a token on the client stored in l
 
 server, readily available in the API functions as 'context.user'
 
----On the client
+###On the client
 ```
 {
 	contextResolver: function(context, callback) {
@@ -102,7 +102,7 @@ server, readily available in the API functions as 'context.user'
 }
 ```
 
----On the server
+###On the server
 
 ```
 {  
