@@ -34,13 +34,13 @@ var api = {
 Make this API available to the client by initializing it:
 
 
-´´´
+```
 new TintoApi(server, api, options); //server is the http connection
-´´´
+```
 
 
 -- On the client:
-´´´
+```
 var api = new TintoApi('ws://localhost', options);
 api.ready(function() { //bootstrap your code so the API is ready to take calls
 	
@@ -56,7 +56,7 @@ api.ready(function() { //bootstrap your code so the API is ready to take calls
 	//get user as an object (useful for frameworks with data binding capabilities)
 	var someVar = api.User.get.asObject(1234);
 });
-´´´
+```
 
 
 
@@ -79,9 +79,11 @@ api.ready(function() { //bootstrap your code so the API is ready to take calls
 --Context Resolver
 
 All API functions (available to the client) need to conform to the following structure:
-´´´
+
+```
 function(context, arg1, arg2, arg…, callback)
-´´´
+```
+
 The context variable allows for context information to be provided, such as a session token, the user linked to the 
 
 session, or any other information typically linked to a user session. The context mechanism is fully customizable.
@@ -91,18 +93,18 @@ This example uses the context resolver to bind a token on the client stored in l
 server, readily available in the API functions as 'context.user'
 
 ---On the client
-´´´
+```
 {
 	contextResolver: function(context, callback) {
 		context.token = localStorage.token;
 		callback(null, context);
 	}
 }
-´´´
+```
 
 ---On the server
 
-´´´
+```
 {  
 	//contextResolver is optional, yet you will need it most of the time
 	contextResolver: function(context, callback) {
@@ -117,5 +119,5 @@ server, readily available in the API functions as 'context.user'
 		}
 	}
 }
-´´´
+```
 
