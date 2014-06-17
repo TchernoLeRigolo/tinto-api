@@ -12,7 +12,7 @@ Define an API on the server. Connect to it using the client library and use the 
 -- On the server:
 
 First define an API, for example:
-´´´javascript
+```javascript
 var api = {
 	SomeInfo: {A: 3, B: 2, $C: 1}, //C is private and not available to the client
 	User: {
@@ -29,7 +29,7 @@ var api = {
 	},
 	...
 }
-´´´
+```
 
 Make this API available to the client by initializing it:
 
