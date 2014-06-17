@@ -33,9 +33,11 @@ var api = {
 
 Make this API available to the client by initializing it:
 
+
 ´´´
 new TintoApi(server, api, options); //server is the http connection
 ´´´
+
 
 -- On the client:
 ´´´
