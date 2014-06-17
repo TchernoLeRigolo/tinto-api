@@ -3,7 +3,7 @@ tinto-api (coming soon in alpha)
 
 >NOTE: At this stage this requires modern browsers with websockets
 
-A client-server mechanism for node and javascript clients - no REST, no HTTP, no boilerplate
+A client-server RPC mechanism for node and javascript clients with no boilerplate
 
 #What it does
 
