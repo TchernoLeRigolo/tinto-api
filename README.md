@@ -11,6 +11,8 @@ Define an API on the server. Connect to it using the client library and use the 
 
 #Usage
 
+An API is defined on the Server (Node) as a Javascript Object with properties. These properties may be Primitives, Objects or Functions. Objects and Primitives are simply exposed to the client, whilst the Functions are available through RPC.
+
 ##On the server
 
 First define an API, for example:
