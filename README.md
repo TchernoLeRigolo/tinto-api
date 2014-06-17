@@ -1,5 +1,5 @@
-tinto-api
-=========
+tinto-api (coming soon in alpha)
+================================
 
 A client-server mechanism for node and javascript clients - no REST, no HTTP, no boilerplate
 
@@ -34,13 +34,13 @@ var api = {
 Make this API available to the client by initializing it:
 
 
-```
+```javascript
 new TintoApi(server, api, options); //server is the http connection
 ```
 
 
 ##On the client
-```
+```javascript
 var api = new TintoApi('ws://localhost', options);
 api.ready(function() { //bootstrap your code so the API is ready to take calls
 	
@@ -80,7 +80,7 @@ api.ready(function() { //bootstrap your code so the API is ready to take calls
 
 All API functions (available to the client) need to conform to the following structure:
 
-```
+```javascript
 function(context, arg1, arg2, arg…, callback)
 ```
 
@@ -93,7 +93,7 @@ This example uses the context resolver to bind a token on the client stored in l
 server, readily available in the API functions as 'context.user'
 
 ###On the client
-```
+```javascript
 {
 	contextResolver: function(context, callback) {
 		context.token = localStorage.token;
@@ -104,7 +104,7 @@ server, readily available in the API functions as 'context.user'
 
 ###On the server
 
-```
+```javascript
 {  
 	//contextResolver is optional, yet you will need it most of the time
 	contextResolver: function(context, callback) {
