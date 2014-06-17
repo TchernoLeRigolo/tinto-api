@@ -21,8 +21,10 @@ var api = {
 		},
 		$get: function(token, callback) {// prefixed with $ => server side only
 			db.User.get({token: token}, callback);//pseudo code , get user in DB
-		}
-		
+		},
+		query: function(context, name, callback) {
+			db.User.query({name: name}, callback);//pseudo code , get user with name in DB
+		},
 		$insert: function(context, name, password, callback) {// prefixed with $ => server side only
 			//some code
 		}
@@ -55,6 +57,8 @@ api.ready(function() { //bootstrap your code so the API is ready to take calls
 
 	//get user as an object (useful for frameworks with data binding capabilities)
 	var someVar = api.User.get.asObject(1234);
+	
+	var someOtherVar = api.User.query.asArray('john');
 });
 ```
 
