@@ -131,3 +131,5 @@ server, readily available in the API functions as 'context.user'
 }
 ```
 
+#License
+The MIT License (MIT)
