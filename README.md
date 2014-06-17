@@ -39,8 +39,11 @@ Make this API available to the client by initializing it:
 
 
 ```javascript
+var http = require('http'),
+    tintoApi = require('tinto-api')
+    ;
 var server = http.createServer(app).listen();
-new TintoApi(server, api, options);
+new tintoApi(server, api, options);
 ```
 
 
