@@ -77,9 +77,6 @@ api.ready(function() { //bootstrap your code so the API is ready to take calls
 * On the client: bower install tinto-api --save
 
 
-#Documentation
-
-
 #Options
 
 * contextResolver - a function which resolves the context further
