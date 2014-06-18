@@ -1,6 +1,6 @@
 tinto-api (coming soon in alpha)
 ================================
-> NOTE: This project is initiating. Come back for v0.1 somewhere in July
+> This project is initiating. Come back for v0.1 somewhere in July
 > Some info here are personal notes still
 > Requires modern browsers with websockets
 
