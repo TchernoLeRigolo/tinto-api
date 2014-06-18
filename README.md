@@ -1,8 +1,8 @@
 tinto-api (coming soon in alpha)
 ================================
 > NOTE: This project is initiating. Come back for v0.1 somewhere in July
-> NOTE: Some info here are personal notes still
-> NOTE: Requires modern browsers with websockets
+> Some info here are personal notes still
+> Requires modern browsers with websockets
 
 A client-server RPC mechanism for node and javascript clients with no boilerplate
 
