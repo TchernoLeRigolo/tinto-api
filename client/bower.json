@@ -1,0 +1,17 @@
+{
+  "name": "tinto-api",
+  "version": "0.0.0",
+  "authors": [
+    "Tcherno <weber.jonathan@gmail.com>"
+  ],
+  "description": "A no boilerplate RPC library for node and javascript clients",
+  "license": "MIT",
+  "homepage": "https://github.com/TchernoLeRigolo/tinto-api",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

@@ -1,0 +1,31 @@
+<?doctype html?>
+<html ng-app="TintoApiTest">
+	<head>
+		<title>Test of tinto-api</title>
+		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js"></script>
+		<script src="tinto-api.js"></script>
+
+		<script>
+			angular.module('TintoApiTest', [])
+				.controller('TintoApiTestController', function($scope) {
+					var api = new tintoApi('ws://localhost:8080', {
+						contextResolver: function(context) {
+							context.sid = localStorage.sid;
+						}
+					});
+					/*api.ready(function() {
+						$scope.user = api.User.get.asObject(123456);
+					});*/
+
+					api.on('ready', function() {
+						console.log(api);
+					});
+					
+					$scope.user = 3;
+				});
+		</script>
+	</head>
+	<body ng-controller="TintoApiTestController">
+	{{user|json}}
+	</body>
+</html>

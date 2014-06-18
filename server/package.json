@@ -1,0 +1,22 @@
+{
+  "name": "tinto-api",
+  "version": "0.0.0",
+  "description": "A no boilerplate RPC library for node and javascript clients",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TchernoLeRigolo/tinto-api"
+  },
+  "author": "Tcherno",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TchernoLeRigolo/tinto-api/issues"
+  },
+  "homepage": "https://github.com/TchernoLeRigolo/tinto-api",
+  "dependencies": {
+    "ws": "^0.4.31"
+  }
+}
