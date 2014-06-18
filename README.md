@@ -212,5 +212,8 @@ api.Post.sync(context, …) {
 api.User.query(context, …,  clb)
 ```
 
+#Caching (proposal)
+TODO
+
 #License
 The MIT License (MIT)
