@@ -6,6 +6,14 @@ tinto-api (coming soon in alpha)
 
 A client-server RPC mechanism for node and javascript clients with no boilerplate. Define an API on the server, connect to it using the client library and use the API right away.
 
+#Installation (not yet)
+
+##Server
+> npm install tinto-api --save 
+
+##Client
+> bower install tinto-api --save
+
 #Usage
 
 An API is defined on the Server (Node) as a Javascript Object with properties. These properties may be Primitives, Objects or Functions. Objects and Primitives are simply exposed to the client, whilst the Functions are available through RPC.
@@ -67,15 +75,6 @@ api.ready(function() { //bootstrap your code so the API is ready to take calls
 	var someOtherVar = api.User.query.asArray('john');
 });
 ```
-
-
-
-#Installation
-
-* On the server: npm install tinto-api --save
-
-* On the client: bower install tinto-api --save
-
 
 #Options
 
