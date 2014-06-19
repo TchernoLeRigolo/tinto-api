@@ -213,7 +213,7 @@ api.User.query(context, …,  clb)
 ```
 
 #Caching (proposal)
-TODO
+When offline, the transactions are cached to be replayed at a later stage. The caching strategy is provided in the options:
 
 #License
 The MIT License (MIT)
