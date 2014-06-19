@@ -147,7 +147,7 @@ api.Test._add = function(a,b) {
 ```
 Will they be available as ‘add’ or as ‘_add’ on the client?
 
-> (test in browser OK): new Function([‘a’, ‘b’], ‘return a+b’)(2,3)  6
+> (test in browser OK): new Function(['a', 'b'], 'return a+b')(2,3)  6
 
 #Eventing & broadcasting (proposal)
 
@@ -160,15 +160,15 @@ In the api, you would for example create a register function:
 ```javascript
 //This will broadcast any user change to all clients
 api.User.register = function(context) {
-	context.register(db.User.on(‘save’, function(err, user) {
+	context.register(db.User.on('save', function(err, user) {
 		if (!err) context.notify({id: user._id, name: user.name});	
 	}));
 }
 
 //This will broadcast any user change to certain clients
 api.User.register = function(context) {
-	context.register(db.User.on(‘save’, function(err, user) {
-context.notify(context.user.following, {id: user._id, name: user.name});		
+	context.register(db.User.on('save', function(err, user) {
+		if (!err) context.notify(context.user.following, {id: user._id, name: user.name});		
 	}));
 }
 ```
@@ -204,12 +204,12 @@ The context should hold the token, the path and the transaction id.
 sync will send same message as asArray but with {sync: true} in the context.
 
 ```javascript
-api.Post.sync(context, …) {
-	db.Post.on(‘save’, function(err, post) {
+api.Post.sync(context, someArgs) {
+	db.Post.on('save', function(err, post) {
 		var audience = context.user.followers.concat([context.user.following]).concat([context.user._id])
 		if (audience.indexOf(post.by)) context.broadcast(err, user);
 
-api.User.query(context, …,  clb)
+api.User.query(context, someArgs,  clb)
 ```
 
 #Caching (proposal)
