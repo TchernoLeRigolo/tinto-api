@@ -4,7 +4,7 @@ tinto-api (coming soon in alpha)
 > Some info here are personal notes still
 > Requires modern browsers with websockets
 
-A client-server RPC mechanism for node and javascript clients with no boilerplate. Define an API on the server, connect to it using the client library and use the API right away.
+A client-server RPC mechanism for node and javascript clients with no boilerplate. Define an API on the server, connect to it using the client library and use it right away.
 
 #Installation (not yet)
 
