@@ -1,4 +1,4 @@
-function tintoEvent(obj) {
+function TintoEvent(obj) {
 	//an object enhancer allowing for trigger, on listeners...
 	obj.listeners = [];
 
@@ -22,14 +22,16 @@ function tintoEvent(obj) {
 	return obj;
 }
 
-function tintoSocket(url, protocols) {
+function TintoSocket(url, protocols) {
 	//a wrapper for websockets with listeners etc...
 	
 }
 
-function tintoApi(url, options) {
+function TintoApi(url, options) {
 	var ws;
-
+	var self = this;
+	var api = TintoEvent({});
+	
 	function uuid() {
 		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
 		    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
@@ -59,25 +61,21 @@ function tintoApi(url, options) {
 		return dst;
 	}
 
-	function trigger(context, path, args) {
+	function reach(header, context, args) {
 		var callback = args.pop();
+		header.connection = api.connection;
+		header.transaction = uuid();
 
-		context._tinto = {id: uuid(), path: path};
-
-		options.context(context);
+		if (options.contextResolver) options.contextResolver(context);
 		
-		ws.onmessage 
-
 		ws.send(JSON.stringify({
+			header: header,
 			context: context, 
-			path: path, 
 			params: args
 		}));
-
-		
 	}
 
-	function as(isArray) {
+	function asSomething(obj, isArray) {
 		return function() {
 			var r = isArray ? []: {}, callback;
 			var args = Array.prototype.slice.call(arguments,0);
@@ -92,7 +90,8 @@ function tintoApi(url, options) {
 				}
 				if (callback) callback(err, result);
 			});
-			this.apply(this, args);
+			
+			obj.apply(obj, args);
 			return r;
 		}
 	}
@@ -103,16 +102,23 @@ function tintoApi(url, options) {
 		for (var k in api) {
 				if (api[k].$fn) {
 					var context = {};
-					var b = function() {
-						trigger({sid: localStorage.sid, }, path, Array.prototype.slice.call(arguments,0));
+					/*var b = function() {
+						TintoApi.trigger({sid: localStorage.sid, }, path, Array.prototype.slice.call(arguments,0));
 					}.toString();
 				
 					var body = 'var path="'+(path + '.' + k) +'";' + b.substring(b.indexOf("{") + 1, b.lastIndexOf("}"));
+					*/
 					var args = api[k].$fn.concat([]);
 					args.push('callback');
-					api_def[k] = new Function(args, body);
-					api_def[k].asArray = as(true);
-					api_def[k].asObject = as(false);
+					api_def[k] = function() {
+						if (k.charAt(0) == '_') {
+							
+						} else {
+							reach({path: path+'.'+k}, {}, Array.prototype.slice.call(arguments,0));
+						}
+					}//Function(args, body);
+					api_def[k].asArray = asSomething(api_def[k], true);
+					api_def[k].asObject = asSomething(api_def[k], false);
 				} else if (api[k].constructor.name === 'Object') {
 					api_def[k] = deserialize(api[k], (path ? path + '.': '') + k);
 				} else {
@@ -122,18 +128,18 @@ function tintoApi(url, options) {
 		return api_def;
 	}
 
-	var api = tintoEvent({});
 	
 	ws = new WebSocket(url);
 
 	ws.onmessage = function(msg) {
 		var message = JSON.parse(msg.data);
-		if (message._tinto) {
-
-		} else {
-			var d = deserialize(message);
+		if (message.api) {
+			var d = deserialize(message.api);
 			shallowCopy(d, api);
+			api.connection = message.connection;
 			api.trigger('ready');
+		} else {
+
 		}
 	}
 	ws.onopen = function() {

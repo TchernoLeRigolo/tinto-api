@@ -24,13 +24,10 @@ First define an API, for example:
 ```javascript
 var api = {
 	SomeInfo: {A: 3, B: 2, $C: 1}, //C is private and not available to the client
-	_SomeFunc:  function(a, b) {return a+b}, //function available on the client
+	_SomeFunc:  function(a, b) {return a+b}, //prefixed with _ function available on the client
 	User: {
 		get:  function(context, id, callback) {
 			db.User.getById(id, callback);//pseudo code , get user in DB
-		},
-		$get: function(token, callback) {// prefixed with $ => server side only
-			db.User.get({token: token}, callback);//pseudo code , get user in DB
 		},
 		query: function(context, name, callback) {
 			db.User.query({name: name}, callback);//pseudo code , get user with name in DB
@@ -47,10 +44,10 @@ Make this API available to the client by initializing it:
 
 
 ```javascript
-var http = require('http'),
-    tintoApi = require('tinto-api')
-    ;
+var http = require('http');
+var tintoApi = require('tinto-api');
 var server = http.createServer(app).listen();
+
 new tintoApi(server, api, options);
 ```
 
@@ -70,9 +67,10 @@ api.ready(function() { //bootstrap your code so the API is ready to take calls
 	});
 
 	//get user as an object (useful for frameworks with data binding capabilities)
-	var someVar = api.User.get.asObject(1234);
+	var user = api.User.get.asObject(1234);
 	
-	var someOtherVar = api.User.query.asArray('john');
+	//search for users with name john. When the response returns, the 'users' array will be populated
+	var users = api.User.query.asArray('john');
 });
 ```
 
@@ -90,13 +88,7 @@ All API functions (available to the client) need to conform to the following str
 function(context, arg1, arg2, arg…, callback)
 ```
 
-The context variable allows for context information to be provided, such as a session token, the user linked to the 
-
-session, or any other information typically linked to a user session. The context mechanism is fully customizable.
-
-This example uses the context resolver to bind a token on the client stored in localStorage to a user on the 
-
-server, readily available in the API functions as 'context.user'
+The context variable allows for context information to be provided, such as a session token, the user linked to the session, or any other information typically linked to a user session. The context mechanism is fully customizable. This example uses the context resolver to bind a token on the client stored in localStorage to a user on the server, readily available in the API functions as 'context.user'.
 
 ###On the client
 ```javascript
@@ -114,10 +106,9 @@ server, readily available in the API functions as 'context.user'
 {  
 	//contextResolver is optional, yet you will need it most of the time
 	contextResolver: function(context, callback) {
-		api.User.$get(context.token, function(err, user) {
+		db.User.find({token: context.token}, function(err, user) {
 			if (err) {
 				callback(err);
-				return;
 			} else {
 				context.user = user;
 				callback(null, context);

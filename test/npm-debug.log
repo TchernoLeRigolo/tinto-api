@@ -22,7 +22,7 @@
 11 error There is likely additional logging output above.
 12 error System Windows_NT 6.2.9200
 13 error command "c:\\Users\\Jonathan\\Dropbox\\tools\\nodejs\\\\node.exe" "c:\\Users\\Jonathan\\Dropbox\\tools\\nodejs\\node_modules\\npm\\bin\\npm-cli.js" "start"
-14 error cwd C:\Users\Jonathan\Dropbox\tinto-api\test
+14 error cwd c:\Users\Jonathan\Dropbox\tinto-api\test
 15 error node -v v0.11.13
 16 error npm -v 1.4.9
 17 error code ELIFECYCLE

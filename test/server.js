@@ -2,7 +2,7 @@ var fs = require('fs'),
 	express = require('express'), 
 	http = require('http'),
 	path = require('path'),
-	tintoApi = require('./../server/index.js')
+	TintoApi = require('./../server/index.js')
 ;
 
 if (process.env.MONGOLAB_URI == null) process.env.MONGOLAB_URI = 'mongodb://localhost/betterwines';
@@ -24,7 +24,7 @@ var server = app.listen(process.env.PORT, function() {
 });
 
 var apiex = {
-	$CONFIG: {a: 3, b: 2, $c: 123456},
+	CONFIG: {a: 3, b: 2, c: 123456},
 	NEWS_TYPES: {
 		FOLLOW: 1,
 		UNFOLLOW: 2
@@ -32,12 +32,12 @@ var apiex = {
 	User: {
 		query: function(context, callback) {
 			callback(null, [
-				{id: 1, name: 'John'},
-				{id: 1, name: 'Mat'},
-				{id: 1, name: 'Alf'},
-				{id: 1, name: 'Judith'},
-				{id: 1, name: 'Josh'},
-				{id: 1, name: 'Sara'}
+				{id: 1, name: 'John', following: [5,6], followers: [3,4]},
+				{id: 2, name: 'Mat', following: [6], followers: [1,4]},
+				{id: 3, name: 'Alf', following: [4], followers: [6,4]},
+				{id: 4, name: 'Judith', following: [1,2], followers: [3,4]},
+				{id: 5, name: 'Josh', following: [], followers: [3,6]},
+				{id: 6, name: 'Sara', following: [4], followers: [3,5]}
 			]);
 		},
 		get: function(context, id, callback) {
@@ -45,6 +45,9 @@ var apiex = {
 				id: id,
 				name: 'John'
 			});
+		},
+		entourage: function(user) {
+			return user.following.concat(user.followers).concat([user.id]);
 		}
 	},
 	Test: function(context, callback) {},
@@ -56,4 +59,19 @@ var apiex = {
 	}
 }
 
-tintoApi(apiex, {}).start(server);
+var ta = new TintoApi(apiex, {
+	timeout: 30 * 1000,
+	contextResolver: function() {
+
+	},
+	paths: {
+		'CONFIG.c': {
+			type: TintoApi.PRIVATE
+		},
+		'User.entourage': {
+			type: TintoApi.SHARED
+		}
+	}
+});
+
+ta.start(server);

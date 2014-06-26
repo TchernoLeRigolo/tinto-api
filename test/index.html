@@ -6,9 +6,11 @@
 		<script src="tinto-api.js"></script>
 
 		<script>
+			localStorage.sid = 123456;
+
 			angular.module('TintoApiTest', [])
 				.controller('TintoApiTestController', function($scope) {
-					var api = new tintoApi('ws://localhost:8080', {
+					var api = new TintoApi('ws://localhost:8080', {
 						contextResolver: function(context) {
 							context.sid = localStorage.sid;
 						}
@@ -19,6 +21,8 @@
 
 					api.on('ready', function() {
 						console.log(api);
+						$scope.test = api.User.query.asArray();
+						$scope.test2 = api.User.query.asObject(111);
 					});
 					
 					$scope.user = 3;
@@ -27,5 +31,7 @@
 	</head>
 	<body ng-controller="TintoApiTestController">
 	{{user|json}}
+	<hr/>
+	{{test|json}}
 	</body>
 </html>
