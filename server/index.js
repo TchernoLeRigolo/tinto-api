@@ -1,7 +1,7 @@
 function TintoApi(api, options) {
 	this.api = api;
 	this.options = options || {};
-	this.options.timeout = this.options.timeout || 5 * 1000;
+	this.options.timeout = this.options.timeout || 30 * 60 * 1000;//30 min default
 	this.connections = {};
 }
 
@@ -31,15 +31,43 @@ TintoApi.prototype.start = function(server) {
 
 		ws.on('message', function(message) {
 			var d = Date.now();
-			try {
-				var message = JSON.parse(message);
-			} catch(e) {
-				//NOT JSON
-			}
-		
+			var message = JSON.parse(message);
+
 			console.log(message);
+			
+			if (message.header) {
+				//message.header.connection
+				var fn = self.getPath(self.api, message.header.path);
+				console.log(fn);
+				var args = [message.context];
+				if (message.params && message.params.length) args = args.concat(message.params);
+
+				args.push(function(err, result) {
+					ws.send(JSON.stringify({
+						header: message.header,
+						context: message.context,
+						result: result
+					}));
+				});
+				console.log(args);
+				fn.apply(fn, args);
+			}
 		});
 	});
+}
+
+TintoApi.prototype.getPath = function(obj, path) {
+	if (path === '.') return obj;
+
+	var paths = path.split('.');
+	var cur = obj;
+
+	for (var j=0; j < paths.length;j++) cur = cur[paths[j]];
+	
+	return cur;
+} ;
+
+TintoApi.prototype.stop = function() {
 }
 
 TintoApi.prototype.getFunctionArguments = function(fn) {
@@ -61,7 +89,7 @@ TintoApi.prototype.serialize = function(api, path) {
 			if (api[k].constructor.name === 'Function') {
 				if (opt && opt.type !== TintoApi.PRIVATE) {
 					var params = self.getFunctionArguments(api[k]);
-					
+
 					api_def[k] = {$fn: params, $body: api[k].toString()};
 					
 				} else if (opt && opt.type === TintoApi.PRIVATE) {

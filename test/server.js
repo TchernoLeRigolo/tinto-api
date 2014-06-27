@@ -31,14 +31,23 @@ var apiex = {
 	},
 	User: {
 		query: function(context, callback) {
-			callback(null, [
+			var result = [
 				{id: 1, name: 'John', following: [5,6], followers: [3,4]},
 				{id: 2, name: 'Mat', following: [6], followers: [1,4]},
 				{id: 3, name: 'Alf', following: [4], followers: [6,4]},
 				{id: 4, name: 'Judith', following: [1,2], followers: [3,4]},
 				{id: 5, name: 'Josh', following: [], followers: [3,6]},
 				{id: 6, name: 'Sara', following: [4], followers: [3,5]}
-			]);
+			];
+
+			for (var i = 0; i < 5; i++) {
+				setTimeout(function() {
+					if (i%2) context.notify({id: 7+i, name: 'New user '+i, following: [], followers: []})
+					if (!(i%2)) context.notify({id: i, name: 'Updated user', following: result[i+1].following, followers: result[i+1].followers})
+				}, 3000 + i * 3000);
+			}
+
+			callback(null, result);
 		},
 		get: function(context, id, callback) {
 			callback(null, {

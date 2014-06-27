@@ -9,13 +9,15 @@ function TintoEvent(obj) {
 		return {listener: l, remove: function() {
 			obj.listeners.splice(obj.listeners.indexOf(l), 1);
 		}};
+
+		if (obj.listenerAdded) obj.listenerAdded(event);
 	}
 
 	obj.trigger = function(event) {
 		var args = Array.prototype.slice.call(arguments);
 		args.shift();
 		for (var i=0;i < obj.listeners.length;i++) {
-			if (obj.listeners[i].event === event) obj.listeners[i].callback(args);
+			if (obj.listeners[i].event === event) obj.listeners[i].callback.apply(obj, args);
 		}
 	}
 
@@ -31,6 +33,10 @@ function TintoApi(url, options) {
 	var ws;
 	var self = this;
 	var api = TintoEvent({});
+	api.options = options;
+	api.listenerAdded = function(key) {
+		if (key === 'ready' && api.connection) api.trigger('ready');
+	}
 	
 	function uuid() {
 		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -61,25 +67,41 @@ function TintoApi(url, options) {
 		return dst;
 	}
 
-	function reach(header, context, args) {
-		var callback = args.pop();
+	function reach(header, context, argsArray) {
+		var callback;
+		if (argsArray[argsArray.length-1] instanceof Function) callback = argsArray.pop();
 		header.connection = api.connection;
 		header.transaction = uuid();
 
 		if (options.contextResolver) options.contextResolver(context);
 		
-		ws.send(JSON.stringify({
+		var l;
+		l = ws.on('message', function(message) {
+			if (message.header.transaction === header.transaction) {
+				console.log('heelo', message.result);
+				if (callback) callback(message.error, message.result);
+				if (api.options.after) api.options.after();
+				l.remove();
+			}
+		});
+
+		var message = {
 			header: header,
 			context: context, 
-			params: args
-		}));
+			params: argsArray
+		};
+
+		console.log(message);
+		ws.send(message);
 	}
 
 	function asSomething(obj, isArray) {
 		return function() {
 			var r = isArray ? []: {}, callback;
+		
 			var args = Array.prototype.slice.call(arguments,0);
 			if (args[args.length-1] instanceof Function) callback = args.pop();
+
 			args.push(function(err, result) {
 				if (isArray) {
 					result.forEach(function(i) {
@@ -92,6 +114,7 @@ function TintoApi(url, options) {
 			});
 			
 			obj.apply(obj, args);
+			
 			return r;
 		}
 	}
@@ -102,21 +125,15 @@ function TintoApi(url, options) {
 		for (var k in api) {
 				if (api[k].$fn) {
 					var context = {};
-					/*var b = function() {
-						TintoApi.trigger({sid: localStorage.sid, }, path, Array.prototype.slice.call(arguments,0));
-					}.toString();
-				
-					var body = 'var path="'+(path + '.' + k) +'";' + b.substring(b.indexOf("{") + 1, b.lastIndexOf("}"));
-					*/
 					var args = api[k].$fn.concat([]);
 					args.push('callback');
+					
 					api_def[k] = function() {
-						if (k.charAt(0) == '_') {
-							
-						} else {
-							reach({path: path+'.'+k}, {}, Array.prototype.slice.call(arguments,0));
-						}
-					}//Function(args, body);
+						var args = Array.prototype.slice.call(arguments,0);
+						reach({path: arguments.callee.path}, {}, args);
+					}
+
+					api_def[k].path = path+'.'+k;
 					api_def[k].asArray = asSomething(api_def[k], true);
 					api_def[k].asObject = asSomething(api_def[k], false);
 				} else if (api[k].constructor.name === 'Object') {
@@ -129,22 +146,35 @@ function TintoApi(url, options) {
 	}
 
 	
-	ws = new WebSocket(url);
+	ws = TintoEvent(new WebSocket(url));
+	ws.onmessage = function(message) {
+		ws.trigger('message', JSON.parse(message.data));
+	}
+	ws.onclose = function() {
+		ws.trigger('close');	
+	}
+	ws.onopen = function() {
+		ws.trigger('open');	
+	}
+	ws.oldSend = ws.send;
+	ws.send = function(obj) {
+		this.oldSend(JSON.stringify(obj));
+	}
 
-	ws.onmessage = function(msg) {
-		var message = JSON.parse(msg.data);
+	//TODO: add on open and remove on close
+	ws.on('message', function(message) {
 		if (message.api) {
 			var d = deserialize(message.api);
 			shallowCopy(d, api);
 			api.connection = message.connection;
 			api.trigger('ready');
-		} else {
-
+			console.log(api);
 		}
-	}
-	ws.onopen = function() {
+	});
+
+	ws.on('open', function() {
 		
-	}
+	});
 
 	return api;
 }
