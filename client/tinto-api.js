@@ -32,6 +32,8 @@ function TintoSocket(url, protocols) {
 function TintoApi(url, options) {
 	var ws;
 	var self = this;
+	this.subscriptions = [];
+
 	var api = TintoEvent({});
 	api.options = options;
 	api.listenerAdded = function(key) {
@@ -67,6 +69,18 @@ function TintoApi(url, options) {
 		return dst;
 	}
 
+	function timeInfo(obj, tm) {
+		if (Array.isArray(obj)) {
+			obj.forEach(function(i) {
+				i.$timestamp = new Date();
+				i.$responsetime = new Date() - tm;
+			});
+		} else {
+			obj.$timestamp = new Date();
+			obj.$responsetime = new Date() - tm;
+		}
+	}
+
 	function reach(caller, header, context, argsArray) {
 		var callback;
 		if (argsArray[argsArray.length-1] instanceof Function) callback = argsArray.pop();
@@ -74,10 +88,11 @@ function TintoApi(url, options) {
 		header.transaction = uuid();
 
 		if (options.contextResolver) options.contextResolver(context);
-		
+		var t = new Date();
 		var l;
 		l = ws.on('message', function(message) {
 			if (message.header.transaction === header.transaction) {
+				timeInfo(message.result, t);
 				if (callback) callback(message.error, message.result);
 				if (api.options.after) api.options.after();
 				l.remove();
@@ -98,6 +113,7 @@ function TintoApi(url, options) {
 			var r = isArray ? []: {}, callback;
 		
 			var args = Array.prototype.slice.call(arguments,0);
+			var argsSignature = JSON.stringify(args);
 			if (args[args.length-1] instanceof Function) callback = args.pop();
 
 			args.push(function(err, result) {
@@ -106,36 +122,64 @@ function TintoApi(url, options) {
 				} else {
 					shallowCopy(result, r);
 				}
+				r.$resolved = true;
 				if (callback) callback(err, result);
 			});
 			
 			obj.apply(obj, args);
-			
+			r.$resolved = false;
 			r.subscribe = function(id, insert) {
 				r.subscriberLisener = ws.on('message', function(message) {
-					if (message.header.transaction === obj.message.header.transaction) {
+					if (message.notification && r.$resolved && message.header.transaction === obj.message.header.transaction) {
 						if (isArray) {
 							var found = false;
+							
 							r.forEach(function(i) {
 								if (i[id] === message.notification[id]) {
 									shallowCopy(message.notification, i);
+									i.$timestamp = new Date();
 									found = true;
 								}
 							});
 							if (!found) {
-								if (!insert || insert === 'after') r.push(message.notification);
-								if (insert === 'before') r.push(message.notification);
-								if (insert instanceof Function) insert(r, message.notification);
+								var newObj = {};
+								shallowCopy(message.notification, newObj);
+								newObj.$timestamp = new Date();
+
+								if (!insert || insert === 'after') r.push(newObj);
+								if (insert === 'before') r.push(newObj);
+								if (insert instanceof Function) insert(r, newObj);
 							}
 						} else {
 							if (r[id] == message.notification[id]) {
 								shallowCopy(message.notification, r);
+								r.$timestamp = new Date();
 							}
 						}
+
 						if (api.options.after) api.options.after();
 					}
 				});
+
+				self.subscriptions.forEach(function(s) {
+					if (s.path === obj.path && s.args === argsSignature) {
+						//we already have a subscription for this!
+						s.listener.remove();
+						self.subscriptions.splice(self.subscriptions.indexOf(s), 1);
+					}
+				});
+
+				self.subscriptions.push({
+					path: obj.path,
+					args: argsSignature,
+					listener: r.subscriberLisener
+				});
+				
 				return r;
+			}
+
+			r.unsubscribe = function() {
+				if (r && r.subscriberLisener) r.subscriberLisener.remove();
 			}
 
 			return r;
@@ -153,7 +197,7 @@ function TintoApi(url, options) {
 					
 					api_def[k] = function() {
 						var args = Array.prototype.slice.call(arguments,0);
-						reach(this, {path: arguments.callee.path}, {}, args);
+						return reach(this, {path: arguments.callee.path}, {}, args);
 					}
 
 					api_def[k].path = path+'.'+k;

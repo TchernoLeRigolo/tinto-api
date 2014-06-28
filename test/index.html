@@ -11,9 +11,15 @@
 			angular.module('TintoApiTest', [])
 				.controller('TintoApiTestController', function($rootScope, $scope) {
 					var api = new TintoApi('ws://localhost:8080', {
+						/*
+						Context is passed as header to the server and can be used to resolve the session etc
+						*/
 						contextResolver: function(context) {
 							context.sid = localStorage.sid;
 						},
+						/*
+						Hook applied after reception of data from the server
+						*/
 						after: function() {
 							$scope.$apply();
 						}
@@ -25,22 +31,31 @@
 						});
 
 						//query as Array, and let api User.query know I want updates and to insert/update them by 'id'
+						//if ($scope.users) $scope.users.unsubscribe();//if I run test twice, clear subscription first
 						$scope.users = api.User.query.asArray().subscribe('id');
-
 						
 						$scope.user2 = api.User.get.asObject(111);
 					};
 				});
 		</script>
+		<style>
+			body {font-family: Tahoma; }
+			table {border-collapse:collapse;}
+			table thead td {font-weight: bold; background: #eee}
+			table tr td {font-size: 10pt; border: 1px solid #ccc; padding: 5px 10px;}
+		</style>
 	</head>
 	<body ng-controller="TintoApiTestController">
 		<div><button ng-click="startTests()">Start tests</button></div>
-
-		<table border="1">
-			<tr><td style="width:200px">Test 1</td><td>{{user.id}}</td><td>{{user.name}}</td></tr>
-			<tr><td>Test 3</td><td>{{user2.id}}</td><td>{{user2.name}}</td></tr>
-			<tr><td>Test 2</td><td>Users</td><td>{{users.length}}</td></tr>
-			<tr ng-repeat="u in users"><td>Test 2</td><td>{{u.id}}</td><td>{{u.name}}</td></tr>
+		<h1>Results</h1>
+		<table>
+			<thead>
+				<tr><td style="width:200px">Test Name</td><td>User ID</td><td>User Name</td><td>$timestamp</td></tr>
+			</thead>
+			<tr><td>Test 1</td><td>{{user.id}}</td><td>{{user.name}}</td><td>{{user.$timestamp}}</td></tr>
+			<tr><td>Test 3</td><td>{{user2.id}}</td><td>{{user2.name}}</td><td>{{user2.$timestamp}}</td></tr>
+			<tr><td>Test 2</td><td>Users</td><td>{{users.length}}</td><td></td></tr>
+			<tr ng-repeat="u in users"><td>Test 2</td><td>{{u.id}}</td><td>{{u.name}}</td><td>{{u.$timestamp}}</td></tr>
 		</table>
 	</body>
 </html>

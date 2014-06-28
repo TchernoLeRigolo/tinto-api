@@ -24,7 +24,7 @@ TintoApi.prototype.start = function(server) {
 		}
 		
 		setTimeout(function() {
-			console.log('time out for socket '+ws);
+			//console.log('time out for socket '+ws);
 		}, self.options.timeout);
 
 		ws.send(JSON.stringify(welcome));
@@ -44,7 +44,7 @@ TintoApi.prototype.start = function(server) {
 						notification: obj
 					}));
 				}
-				
+
 				if (message.params && message.params.length) args = args.concat(message.params);
 
 				args.push(function(err, result) {
