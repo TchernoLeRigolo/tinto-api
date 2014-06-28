@@ -15,7 +15,7 @@
 							context.sid = localStorage.sid;
 						},
 						after: function() {
-							$rootScope.$apply();
+							$scope.$apply();
 						}
 					});
 					
@@ -25,19 +25,22 @@
 						});
 
 						//query as Array, and let api User.query know I want updates and to insert/update them by 'id'
-						$scope.test = api.User.query.asArray().subscribe('id');
+						$scope.users = api.User.query.asArray().subscribe('id');
 
 						
-						$scope.test2 = api.User.get.asObject(111);
+						$scope.user2 = api.User.get.asObject(111);
 					};
 				});
 		</script>
 	</head>
 	<body ng-controller="TintoApiTestController">
-	<div><button ng-click="startTests()">Start tests</button></div>
-	<table border="1">
-		<tr><td style="width:200px">Test 1</td><td>{{user|json}}</td></tr>
-		<tr><td>Test 2</td><td>{{test|json}}</td></tr>
-		<tr><td>Test 3</td><td>{{test2|json}}</td></tr>
+		<div><button ng-click="startTests()">Start tests</button></div>
+
+		<table border="1">
+			<tr><td style="width:200px">Test 1</td><td>{{user.id}}</td><td>{{user.name}}</td></tr>
+			<tr><td>Test 3</td><td>{{user2.id}}</td><td>{{user2.name}}</td></tr>
+			<tr><td>Test 2</td><td>Users</td><td>{{users.length}}</td></tr>
+			<tr ng-repeat="u in users"><td>Test 2</td><td>{{u.id}}</td><td>{{u.name}}</td></tr>
+		</table>
 	</body>
 </html>

@@ -41,10 +41,11 @@ var apiex = {
 			];
 
 			for (var i = 0; i < 5; i++) {
-				setTimeout(function() {
-					if (i%2) context.notify({id: 7+i, name: 'New user '+i, following: [], followers: []})
-					if (!(i%2)) context.notify({id: i, name: 'Updated user', following: result[i+1].following, followers: result[i+1].followers})
-				}, 3000 + i * 3000);
+				setTimeout((function() {
+					var k = Math.round(Math.random() * 20);
+					if (k > 6) context.notify({id: k, name: 'New user '+k, following: [], followers: []})
+					if (k < 7) context.notify({id: k, name: 'Updated user'+k, following: [], followers: []})
+				}).bind(this), 3000 + i * 3000);
 			}
 
 			callback(null, result);
@@ -59,11 +60,17 @@ var apiex = {
 			return user.following.concat(user.followers).concat([user.id]);
 		}
 	},
-	Test: function(context, callback) {},
+	Test: function(context, callback) {
+		callback();
+	},
 	Test2: {
 		Test3: {
 			try: function(context, id, p1, p2, callback) {
+				callback();
 			}
+		},
+		add: function(a, b) {
+			return a+b;
 		}
 	}
 }
@@ -75,10 +82,13 @@ var ta = new TintoApi(apiex, {
 	},
 	paths: {
 		'CONFIG.c': {
-			type: TintoApi.PRIVATE
+			type: TintoApi.PRIVATE //do not expose CONFIG.c
 		},
 		'User.entourage': {
-			type: TintoApi.SHARED
+			type: TintoApi.SHARED //share function on client
+		},
+		'Test2.add': {
+			type: TintoApi.SHARED //share function on client
 		}
 	}
 });

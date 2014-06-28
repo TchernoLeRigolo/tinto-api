@@ -33,13 +33,18 @@ TintoApi.prototype.start = function(server) {
 			var d = Date.now();
 			var message = JSON.parse(message);
 
-			console.log(message);
-			
 			if (message.header) {
 				//message.header.connection
 				var fn = self.getPath(self.api, message.header.path);
-				console.log(fn);
 				var args = [message.context];
+				message.context.notify = function(obj) {
+					ws.send(JSON.stringify({
+						header: message.header,
+						context: message.context,
+						notification: obj
+					}));
+				}
+				
 				if (message.params && message.params.length) args = args.concat(message.params);
 
 				args.push(function(err, result) {
@@ -49,7 +54,7 @@ TintoApi.prototype.start = function(server) {
 						result: result
 					}));
 				});
-				console.log(args);
+
 				fn.apply(fn, args);
 			}
 		});
@@ -84,27 +89,25 @@ TintoApi.prototype.serialize = function(api, path) {
 	for (var k in api) {
 		if (api.hasOwnProperty(k)) {//k.charAt(0) != '$') {
 			var subpath = path + '.' + k;
-			var opt = self.options && self.options.paths && self.options.paths[subpath];
+			var opt = self.options.paths[subpath] || {};
 
 			if (api[k].constructor.name === 'Function') {
-				if (opt && opt.type !== TintoApi.PRIVATE) {
+				if (opt.type === TintoApi.PRIVATE) {
+					//do nothing
+				} else if (opt.type === TintoApi.SHARED) {
 					var params = self.getFunctionArguments(api[k]);
 
 					api_def[k] = {$fn: params, $body: api[k].toString()};
-					
-				} else if (opt && opt.type === TintoApi.PRIVATE) {
-					console.log('private function ' + subpath);
-				} else if (!opt || opt.type === TintoApi.PUBLIC) {
+				} else {
 					var params = self.getFunctionArguments(api[k]);
 					params.shift(); //remove context
 					params.pop(); //remove callback
 					api_def[k] = {$fn: params};
 				}
 			} else if (api[k].constructor.name === 'Object') {
-				api_def[k] = self.serialize(api[k], subpath);
+				if (opt.type !== TintoApi.PRIVATE) api_def[k] = self.serialize(api[k], subpath);
 			} else {
-				//simple copy
-				api_def[k] = api[k];
+				if (opt.type !== TintoApi.PRIVATE) api_def[k] = api[k];
 			}
 		}
 	}

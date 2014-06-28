@@ -67,7 +67,7 @@ function TintoApi(url, options) {
 		return dst;
 	}
 
-	function reach(header, context, argsArray) {
+	function reach(caller, header, context, argsArray) {
 		var callback;
 		if (argsArray[argsArray.length-1] instanceof Function) callback = argsArray.pop();
 		header.connection = api.connection;
@@ -78,21 +78,19 @@ function TintoApi(url, options) {
 		var l;
 		l = ws.on('message', function(message) {
 			if (message.header.transaction === header.transaction) {
-				console.log('heelo', message.result);
 				if (callback) callback(message.error, message.result);
 				if (api.options.after) api.options.after();
 				l.remove();
 			}
 		});
 
-		var message = {
+		caller.message = {
 			header: header,
 			context: context, 
 			params: argsArray
 		};
 
-		console.log(message);
-		ws.send(message);
+		ws.send(caller.message);
 	}
 
 	function asSomething(obj, isArray) {
@@ -104,9 +102,7 @@ function TintoApi(url, options) {
 
 			args.push(function(err, result) {
 				if (isArray) {
-					result.forEach(function(i) {
-						r.push(i);
-					});
+					r.splice.apply(r, [0, 0].concat(result));
 				} else {
 					shallowCopy(result, r);
 				}
@@ -115,6 +111,33 @@ function TintoApi(url, options) {
 			
 			obj.apply(obj, args);
 			
+			r.subscribe = function(id, insert) {
+				r.subscriberLisener = ws.on('message', function(message) {
+					if (message.header.transaction === obj.message.header.transaction) {
+						if (isArray) {
+							var found = false;
+							r.forEach(function(i) {
+								if (i[id] === message.notification[id]) {
+									shallowCopy(message.notification, i);
+									found = true;
+								}
+							});
+							if (!found) {
+								if (!insert || insert === 'after') r.push(message.notification);
+								if (insert === 'before') r.push(message.notification);
+								if (insert instanceof Function) insert(r, message.notification);
+							}
+						} else {
+							if (r[id] == message.notification[id]) {
+								shallowCopy(message.notification, r);
+							}
+						}
+						if (api.options.after) api.options.after();
+					}
+				});
+				return r;
+			}
+
 			return r;
 		}
 	}
@@ -130,7 +153,7 @@ function TintoApi(url, options) {
 					
 					api_def[k] = function() {
 						var args = Array.prototype.slice.call(arguments,0);
-						reach({path: arguments.callee.path}, {}, args);
+						reach(this, {path: arguments.callee.path}, {}, args);
 					}
 
 					api_def[k].path = path+'.'+k;
@@ -168,7 +191,6 @@ function TintoApi(url, options) {
 			shallowCopy(d, api);
 			api.connection = message.connection;
 			api.trigger('ready');
-			console.log(api);
 		}
 	});
 
