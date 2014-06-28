@@ -1,0 +1,35 @@
+body {font-family: Tahoma; }
+table {border-collapse:collapse;}
+table thead td {font-weight: bold; background: #eee}
+table tr td {font-size: 10pt; border: 1px solid #ccc; padding: 5px 10px;}
+
+.change {
+    background: red;
+    color: white;
+}
+.change-add,.change-remove {
+	background: none;
+	color: black;
+	-webkit-transition: all 1s ease-in-out;
+}
+.change-add-active, .change-remove {
+	background: red;
+	color: white;
+}
+.change-remove-active {
+	background: none;
+	color: black;
+}
+
+.animate.ng-enter, .animate.ng-leave {
+	transition: all 1s ease-in-out;
+} 
+
+.animate.ng-enter.ng-enter-active, .animate.ng-leave {
+	background: green;
+	color: white;
+}
+.animate.ng-leave.ng-leave-active, .animate.ng-enter {
+	background: none;
+	color: black;
+}

@@ -1,23 +1,23 @@
 function TintoEvent(obj) {
 	//an object enhancer allowing for trigger, on listeners...
-	obj.listeners = [];
+	var listeners = [];
 
 	obj.on = function(event, callback) {
-		var l  ={event: event, callback: callback};
-		obj.listeners.push(l);
+		var l  = {event: event, callback: callback};
+		listeners.push(l);
 
 		return {listener: l, remove: function() {
-			obj.listeners.splice(obj.listeners.indexOf(l), 1);
+			listeners.splice(listeners.indexOf(l), 1);
 		}};
 
-		if (obj.listenerAdded) obj.listenerAdded(event);
+		if (obj.listenerAdded) obj.listenerAdded();
 	}
 
 	obj.trigger = function(event) {
 		var args = Array.prototype.slice.call(arguments);
 		args.shift();
-		for (var i=0;i < obj.listeners.length;i++) {
-			if (obj.listeners[i].event === event) obj.listeners[i].callback.apply(obj, args);
+		for (var i=0;i < listeners.length;i++) {
+			if (listeners[i].event === event) listeners[i].callback.apply(obj, args);
 		}
 	}
 
@@ -25,8 +25,47 @@ function TintoEvent(obj) {
 }
 
 function TintoSocket(url, protocols) {
-	//a wrapper for websockets with listeners etc...
+	this.url = url;
+	this.protocols = protocols;
 	
+	TintoEvent(this);
+}
+
+TintoSocket.CONNECTING = 0;
+TintoSocket.OPEN = 1;
+TintoSocket.CLOSING = 2;
+TintoSocket.CLOSED = 3;
+
+TintoSocket.prototype.open = function() {
+	var self = this;
+	var ws = new WebSocket(this.url);
+
+	ws.onmessage = function(message) {
+		self.trigger('message', JSON.parse(message.data));
+	}
+	ws.onclose = function() {
+		self.trigger('close');
+	}
+	ws.onopen = function() {
+		self.trigger('open');
+	}
+	ws.onerror = function() {
+		self.trigger('error');
+	}
+
+	this.ws = ws;
+}
+
+TintoSocket.prototype.send = function(obj) {
+	if (this.ws.readyState == TintoSocket.OPEN) {//OPEN
+		this.ws.send(JSON.stringify(obj));
+	} else {
+		var l = this.on('open', function() {
+			this.ws.send(JSON.stringify(obj));
+			l.remove();
+		});
+		this.open();
+	}
 }
 
 function TintoApi(url, options) {
@@ -190,56 +229,41 @@ function TintoApi(url, options) {
 		var api_def = {};
 		
 		for (var k in api) {
-				if (api[k].$fn) {
-					var context = {};
-					var args = api[k].$fn.concat([]);
-					args.push('callback');
-					
-					api_def[k] = function() {
-						var args = Array.prototype.slice.call(arguments,0);
-						return reach(this, {path: arguments.callee.path}, {}, args);
-					}
-
-					api_def[k].path = path+'.'+k;
-					api_def[k].asArray = asSomething(api_def[k], true);
-					api_def[k].asObject = asSomething(api_def[k], false);
-				} else if (api[k].constructor.name === 'Object') {
-					api_def[k] = deserialize(api[k], (path ? path + '.': '') + k);
-				} else {
-					api_def[k] = api[k];
+			if (api[k].$fn) {
+				var context = {};
+				var args = api[k].$fn.concat([]);
+				args.push('callback');
+				
+				api_def[k] = function() {
+					var args = Array.prototype.slice.call(arguments,0);
+					return reach(this, {path: arguments.callee.path}, {}, args);
 				}
+
+				api_def[k].path = path+'.'+k;
+				api_def[k].asArray = asSomething(api_def[k], true);
+				api_def[k].asObject = asSomething(api_def[k], false);
+			} else if (api[k].constructor.name === 'Object') {
+				api_def[k] = deserialize(api[k], (path ? path + '.': '') + k);
+			} else {
+				api_def[k] = api[k];
+			}
 		}
+
 		return api_def;
 	}
 
-	
-	ws = TintoEvent(new WebSocket(url));
-	ws.onmessage = function(message) {
-		ws.trigger('message', JSON.parse(message.data));
-	}
-	ws.onclose = function() {
-		ws.trigger('close');	
-	}
-	ws.onopen = function() {
-		ws.trigger('open');	
-	}
-	ws.oldSend = ws.send;
-	ws.send = function(obj) {
-		this.oldSend(JSON.stringify(obj));
-	}
+	ws = new TintoSocket(url);
+	ws.open();
 
 	//TODO: add on open and remove on close
 	ws.on('message', function(message) {
+		console.log(message);
 		if (message.api) {
 			var d = deserialize(message.api);
 			shallowCopy(d, api);
 			api.connection = message.connection;
 			api.trigger('ready');
 		}
-	});
-
-	ws.on('open', function() {
-		
 	});
 
 	return api;

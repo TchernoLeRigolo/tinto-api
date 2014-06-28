@@ -23,6 +23,12 @@ var server = app.listen(process.env.PORT, function() {
 	console.log('Node/Express initiated');
 });
 
+var names = JSON.parse(fs.readFileSync('first-names.json'));
+
+function getName() {
+	return names[Math.round(Math.random() * (names.length-1))];
+}
+
 var apiex = {
 	CONFIG: {a: 3, b: 2, c: 123456},
 	NEWS_TYPES: {
@@ -31,22 +37,21 @@ var apiex = {
 	},
 	User: {
 		query: function(context, callback) {
-			var result = [
-				{id: 1, name: 'John', following: [5,6], followers: [3,4]},
-				{id: 2, name: 'Mat', following: [6], followers: [1,4]},
-				{id: 3, name: 'Alf', following: [4], followers: [6,4]},
-				{id: 4, name: 'Judith', following: [1,2], followers: [3,4]},
-				{id: 5, name: 'Josh', following: [], followers: [3,6]},
-				{id: 6, name: 'Sara', following: [4], followers: [3,5]}
-			];
+			var result = [];
+			for (var i=0;i < 10; i++) result.push({id: i, name: getName()});
 
-			for (var i = 0; i < 5; i++) {
+			var eventing = function() {
 				setTimeout((function() {
-					var k = Math.round(Math.random() * 20);
-					if (k > 6) context.notify({id: k, name: 'New user '+k, following: [], followers: []})
-					if (k < 7) context.notify({id: k, name: 'Updated user'+k, following: [], followers: []})
-				}).bind(this), 3000 + i * 3000);
+					var k = Math.round(Math.random() * result.length * 1.3);
+					var e = {id: k, name: getName()};
+					
+					context.notify(e);
+					result.push(e);
+
+					if (result.length < 20) eventing();
+				}).bind(this), 3000);
 			}
+			eventing();
 
 			callback(null, result);
 		},
@@ -92,5 +97,6 @@ var ta = new TintoApi(apiex, {
 		}
 	}
 });
+
 
 ta.start(server);
