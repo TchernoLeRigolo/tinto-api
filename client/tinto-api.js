@@ -1,5 +1,5 @@
+//An object wrapper for eventing (on, trigger)
 function TintoEvent(obj) {
-	//an object enhancer allowing for trigger, on listeners...
 	var listeners = [];
 
 	obj.on = function(event, callback) {
@@ -10,7 +10,7 @@ function TintoEvent(obj) {
 			listeners.splice(listeners.indexOf(l), 1);
 		}};
 
-		if (obj.listenerAdded) obj.listenerAdded();
+		if (event !== 'listenerAdded') obj.trigger('listenerAdded');
 	}
 
 	obj.trigger = function(event) {
@@ -24,6 +24,14 @@ function TintoEvent(obj) {
 	return obj;
 }
 
+/*
+TintoSocket(url, protocols)
+ - Wrapper for the Websocket object providing the following added services:
+   * Automatic JSON serializing/deserializing
+   * Eventing as defined in TintoEvent for Open, Close, Error and Message events
+   * Enumeration of socket ready states
+   * Connection & resume packets sending...
+*/
 function TintoSocket(url, protocols) {
 	this.url = url;
 	this.protocols = protocols;
@@ -68,6 +76,10 @@ TintoSocket.prototype.send = function(obj) {
 	}
 }
 
+
+/* TintoApi (url, options)
+	
+*/
 function TintoApi(url, options) {
 	var ws;
 	var self = this;
@@ -75,9 +87,9 @@ function TintoApi(url, options) {
 
 	var api = TintoEvent({});
 	api.options = options;
-	api.listenerAdded = function(key) {
+	api.on('listenerAdded', function(key) {
 		if (key === 'ready' && api.connection) api.trigger('ready');
-	}
+	});
 	
 	function uuid() {
 		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -120,36 +132,45 @@ function TintoApi(url, options) {
 		}
 	}
 
-	function reach(caller, header, context, argsArray) {
+	function remoteCall(caller, header, context, argsArray) {
 		var callback;
 		if (argsArray[argsArray.length-1] instanceof Function) callback = argsArray.pop();
 		header.connection = api.connection;
 		header.transaction = uuid();
 
-		if (options.contextResolver) options.contextResolver(context);
-		var t = new Date();
-		var l;
-		l = ws.on('message', function(message) {
-			if (message.header.transaction === header.transaction) {
-				timeInfo(message.result, t);
-				if (callback) callback(message.error, message.result);
-				if (api.options.after) api.options.after();
-				l.remove();
-			}
-		});
+		var applySend = function(context) {
+			var t = new Date();
+			var l;
+			l = ws.on('message', function(message) {
+				if (message.header.transaction === header.transaction) {
+					timeInfo(message.result, t);
+					if (callback) callback(message.error, message.result);
+					if (api.options.after) api.options.after();
+					l.remove();
+				}
+			});
 
-		caller.message = {
-			header: header,
-			context: context, 
-			params: argsArray
-		};
+			caller.message = {
+				header: header,
+				context: context, 
+				params: argsArray
+			};
 
-		ws.send(caller.message);
+			ws.send(caller.message);
+		}
+
+		if (options.contextResolver) {
+			options.contextResolver(context, function(err, context) {
+				applySend(context);
+			});
+		} else {
+			applySend(context);
+		}
 	}
 
 	function asSomething(obj, isArray) {
 		return function() {
-			var r = isArray ? []: {}, callback;
+			var r = TintoEvent(isArray ? []: {}), callback;
 		
 			var args = Array.prototype.slice.call(arguments,0);
 			var argsSignature = JSON.stringify(args);
@@ -171,16 +192,7 @@ function TintoApi(url, options) {
 				r.subscriberLisener = ws.on('message', function(message) {
 					if (message.notification && r.$resolved && message.header.transaction === obj.message.header.transaction) {
 						if (isArray) {
-							var found = false;
-							
-							r.forEach(function(i) {
-								if (i[id] === message.notification[id]) {
-									shallowCopy(message.notification, i);
-									i.$timestamp = new Date();
-									found = true;
-								}
-							});
-							if (!found) {
+							if (message.context.event === 'new') {
 								var newObj = {};
 								shallowCopy(message.notification, newObj);
 								newObj.$timestamp = new Date();
@@ -188,6 +200,27 @@ function TintoApi(url, options) {
 								if (!insert || insert === 'after') r.push(newObj);
 								if (insert === 'before') r.push(newObj);
 								if (insert instanceof Function) insert(r, newObj);
+								r.trigger('itemAdded', newObj);
+							} else if (message.context.event === 'update') {
+								r.forEach(function(i) {
+									if (i[id] === message.notification[id]) {
+										r.trigger('itemUpdated', message.notification, i);
+										shallowCopy(message.notification, i);
+										i.$timestamp = new Date();
+									}
+								});
+							} else if (message.context.event === 'delete') {
+								var index = null;
+								for (var i=0;i<r.length;i++) {
+									if (r[i][id] === message.notification[id]) {
+										index=i;
+										break;
+									}
+								}
+								if (index) {
+									r.trigger('itemDeleted', r[index]);
+									r.splice(index, 1);
+								}
 							}
 						} else {
 							if (r[id] == message.notification[id]) {
@@ -225,7 +258,7 @@ function TintoApi(url, options) {
 		}
 	}
 
-	function deserialize(api, path) {
+	function deserializeApi(api, path) {
 		var api_def = {};
 		
 		for (var k in api) {
@@ -236,14 +269,14 @@ function TintoApi(url, options) {
 				
 				api_def[k] = function() {
 					var args = Array.prototype.slice.call(arguments,0);
-					return reach(this, {path: arguments.callee.path}, {}, args);
+					return remoteCall(this, {path: arguments.callee.path}, {}, args);
 				}
 
 				api_def[k].path = path+'.'+k;
 				api_def[k].asArray = asSomething(api_def[k], true);
 				api_def[k].asObject = asSomething(api_def[k], false);
 			} else if (api[k].constructor.name === 'Object') {
-				api_def[k] = deserialize(api[k], (path ? path + '.': '') + k);
+				api_def[k] = deserializeApi(api[k], (path ? path + '.': '') + k);
 			} else {
 				api_def[k] = api[k];
 			}
@@ -259,7 +292,7 @@ function TintoApi(url, options) {
 	ws.on('message', function(message) {
 		console.log(message);
 		if (message.api) {
-			var d = deserialize(message.api);
+			var d = deserializeApi(message.api);
 			shallowCopy(d, api);
 			api.connection = message.connection;
 			api.trigger('ready');

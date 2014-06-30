@@ -18,8 +18,9 @@ angular.module('TintoApiTest', ['ngAnimate'])
 			/*
 			Context is passed as header to the server and can be used to resolve the session etc
 			*/
-			contextResolver: function(context) {
+			contextResolver: function(context, callback) {
 				context.sid = localStorage.sid;
+				callback(null, context);
 			},
 			/*
 			Hook applied after reception of data from the server
@@ -41,6 +42,15 @@ angular.module('TintoApiTest', ['ngAnimate'])
 			//query as Array, and let api User.query know I want updates and to insert/update them by 'id'
 			//if ($scope.users) $scope.users.unsubscribe();//if I run test twice, clear subscription first
 			$scope.users = api.User.query.asArray().subscribe('id');
+			$scope.users.on('itemAdded', function(item) {
+				$scope.lastAction = 'Item ' + item.name + ' added';
+			});
+			$scope.users.on('itemDeleted', function(item) {
+				$scope.lastAction = 'Item ' + item.name + ' deleted';
+			});
+			$scope.users.on('itemUpdated', function(item, old) {
+				$scope.lastAction = 'Item ' + old.name + ' updated to ' + item.name;
+			});
 			
 			$scope.user2 = api.User.get.asObject(111);
 		};

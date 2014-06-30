@@ -1,7 +1,7 @@
 tinto-api (coming soon in alpha)
 ================================
-> This project is initiating. Come back for v0.1 somewhere in July
-> Some info here are personal notes still
+> This project is initiating. Come back for v0.1 somewhere in July-August 2014
+> Some info here are personal notes
 > Requires modern browsers with websockets
 
 A client-server RPC mechanism for node and javascript clients with no boilerplate. Define an API on the server, connect to it using the client library and use it right away.
@@ -23,16 +23,16 @@ An API is defined on the Server (Node) as a Javascript Object with properties. T
 First define an API, for example:
 ```javascript
 var api = {
-	SomeInfo: {A: 3, B: 2, $C: 1}, //C is private and not available to the client
-	_SomeFunc:  function(a, b) {return a+b}, //prefixed with _ function available on the client
+	privateInfo: {A: 3, B: 2, C: 1}, //we will make C private = not available to the client
+	sharedFunc:  function(a, b) {return a+b}, //share function with the client
 	User: {
-		get:  function(context, id, callback) {
-			db.User.getById(id, callback);//pseudo code , get user in DB
+		get: function(context, id, callback) {
+			db.User.getById(id, callback);//pseudo code, get user in DB
 		},
 		query: function(context, name, callback) {
 			db.User.query({name: name}, callback);//pseudo code , get user with name in DB
 		},
-		$insert: function(context, name, password, callback) {// prefixed with $ => server side only
+		insert: function(context, name, password, callback) {// make private
 			//some code
 		}
 	},
@@ -77,12 +77,12 @@ api.ready(function() { //bootstrap your code so the API is ready to take calls
 #Options
 
 * contextResolver - a function which resolves the context further
-* Other...
+* after - function called after receiving data from the server. Useful for example when using Angular to update the scope (scope.$apply)
 
 
 ##Context Resolver
 
-All API functions (available to the client) need to conform to the following structure:
+All API functions (RPC) need to conform to the following structure:
 
 ```javascript
 function(context, arg1, arg2, arg…, callback)

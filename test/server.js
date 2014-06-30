@@ -44,11 +44,30 @@ var apiex = {
 				setTimeout((function() {
 					var k = Math.round(Math.random() * result.length * 1.3);
 					var e = {id: k, name: getName()};
+					var found = false;
 					
-					context.notify(e);
-					result.push(e);
+					for (var i=0;i < result.length;i++) {
+						if (result[i].id === e.id) {
+							found = i;
+							break;
+						}
+					}
+					if (!found) {
+						context.event = 'new';
+						result.push(e);
+					} else {
+						if (Math.random() < 0.2) {
+							context.event = 'delete';
+							result.splice(result.indexOf(result[found]), 1);
+						} else {
+							context.event = 'update';
+							result[found] = e;
+						}
+					}
 
-					if (result.length < 20) eventing();
+					context.notify(e);
+
+					if (result.length < 50) eventing();
 				}).bind(this), 3000);
 			}
 			eventing();
